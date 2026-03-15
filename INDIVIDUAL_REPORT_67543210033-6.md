@@ -1,6 +1,6 @@
 # Individual Report
-**ชื่อ-สกุล:** นาย A (ทีม)
-**รหัสนักศึกษา:** 65xxxxxxxx1
+**ชื่อ-สกุล:** นาย นายธาวัน  ทิพคุณ (ทีม)
+**รหัสนักศึกษา:** 67543210033-6
 
 ## ส่วนที่รับผิดชอบ
 Nginx API Gateway, Docker Compose, Frontend UI

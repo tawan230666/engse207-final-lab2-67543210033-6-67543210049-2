@@ -1,6 +1,6 @@
 # Individual Report
-**ชื่อ-สกุล:** นาย B
-**รหัสนักศึกษา:** 65xxxxxxxx2
+**ชื่อ-สกุล:** นาย อติโรจน์  กุหลั่น
+**รหัสนักศึกษา:** 67543210049-2
 
 ## ส่วนที่รับผิดชอบ
 Auth Service, Task Service, Log Service, PostgreSQL
