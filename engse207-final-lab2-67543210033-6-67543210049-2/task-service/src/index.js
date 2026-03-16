@@ -21,6 +21,3 @@ async function start() {
   app.listen(PORT, () => console.log(`[task-service] running on ${PORT}`));
 }
 start();
-  app.listen(PORT, () => console.log(`[task-service] running on ${PORT}`));
-}
-start();
