@@ -3,59 +3,142 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>👤 Profile - Final Lab Set 2</title>
+  <title>👤 Profile Settings | ENGSE207</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    :root { --bg: #0f172a; --surface: #1e293b; --text: #f8fafc; --muted: #94a3b8; --primary: #3b82f6; }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 2rem; display: flex; justify-content: center; }
-    .card { background: var(--surface); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); width: 100%; max-width: 500px; }
-    h1 { text-align: center; margin-bottom: 1.5rem; }
-    input, textarea, button { width: 100%; padding: 0.75rem; margin-bottom: 1rem; border-radius: 8px; border: 1px solid #334155; background: var(--bg); color: var(--text); outline: none; }
-    button { background: var(--primary); color: white; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; }
-    button:hover { background: #2563eb; }
-    a { color: var(--primary); text-decoration: none; display: block; text-align: center; margin-top: 1rem; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+    .sidebar-link.active { background-color: #ecfdf5; color: #059669; border-right: 4px solid #10b981; }
   </style>
 </head>
-<body>
-<div class="card">
-  <h1>👤 ข้อมูลโปรไฟล์</h1>
-  <label>ชื่อแสดงผล (Display Name)</label>
-  <input type="text" id="displayName" placeholder="Display Name">
-  <label>ประวัติย่อ (Bio)</label>
-  <textarea id="bio" rows="3" placeholder="เขียนอะไรสักหน่อย..."></textarea>
-  <button onclick="updateProfile()">💾 บันทึกโปรไฟล์</button>
-  <a href="index.html">⬅️ กลับไปหน้าจัดการงาน</a>
-</div>
-<script src="config.js"></script>
-<script>
-  const token = localStorage.getItem('token');
-  if (!token) window.location.href = 'index.html';
-  async function fetchProfile() {
-    try {
-      const res = await fetch(`${window.APP_CONFIG.USER_URL}/api/users/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.profile) {
-        document.getElementById('displayName').value = data.profile.display_name || '';
-        document.getElementById('bio').value = data.profile.bio || '';
+<body class="min-h-screen text-slate-700">
+
+  <div class="flex min-h-screen">
+    <aside class="w-64 bg-white border-r border-slate-200 hidden md:block">
+      <div class="p-6 border-b border-slate-100 flex items-center gap-3">
+        <div class="bg-emerald-100 text-emerald-600 p-2 rounded-lg font-bold text-xs">ENGSE207</div>
+        <span class="text-slate-500 text-sm font-semibold">Final Lab</span>
+      </div>
+      <nav class="mt-6 px-4 space-y-2">
+        <a href="index.html" class="sidebar-link flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-50 transition-all">
+          <i class="fa-solid fa-house text-[12px]"></i> Dashboard
+        </a>
+        <a href="profile.html" class="sidebar-link active flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all">
+          <i class="fa-solid fa-user text-[12px]"></i> Profile
+        </a>
+      </nav>
+      <div class="absolute bottom-6 w-64 px-6">
+        <button onclick="logout()" class="w-full flex items-center justify-center gap-2 text-sm font-semibold text-rose-500 bg-rose-50 py-2.5 rounded-xl hover:bg-rose-100 transition">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </button>
+      </div>
+    </aside>
+
+    <main class="flex-1 p-8">
+      <header class="mb-10">
+        <h2 class="text-2xl font-bold text-slate-800">Account Settings</h2>
+        <p class="text-slate-400 text-sm italic">Manage your profile and presence</p>
+      </header>
+
+      <div class="max-w-xl bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="bg-slate-900 h-24 relative">
+            <div class="absolute -bottom-10 left-8">
+                <div class="w-20 h-20 bg-emerald-400 rounded-2xl border-4 border-white flex items-center justify-center shadow-lg">
+                    <img id="profilePreview" src="https://i.pravatar.cc/150?u=guest" class="w-full h-full rounded-xl object-cover bg-white">
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-8 pt-14 space-y-6">
+          
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">อัพโหลดรูปโปรไฟล์ (ขนาดเล็กไม่เกิน 100KB)</label>
+            <input type="file" id="imageFile" accept="image/*" onchange="previewAndConvertImage()"
+              class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200 cursor-pointer">
+            <input type="hidden" id="profileUrl">
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Display Name</label>
+            <input type="text" id="displayName" placeholder="ชื่อที่ต้องการให้แสดง" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition">
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Bio</label>
+            <textarea id="bio" rows="3" placeholder="เขียนอะไรบางอย่างเกี่ยวกับคุณ..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"></textarea>
+          </div>
+
+          <div class="pt-4 flex gap-4">
+            <button onclick="updateProfile()" class="flex-1 bg-emerald-500 text-white font-bold py-3 rounded-xl hover:bg-emerald-600 transition shadow-lg shadow-emerald-200 flex items-center justify-center gap-2">
+              <i class="fa-solid fa-floppy-disk"></i> Save Profile
+            </button>
+            <a href="index.html" class="flex-1 bg-slate-50 text-slate-400 font-bold py-3 rounded-xl hover:bg-slate-100 transition flex items-center justify-center">Back</a>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = 'index.html';
+
+    async function fetchProfile() {
+      try {
+        const res = await fetch(`${window.APP_CONFIG.USER_URL}/api/users/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await res.json();
+        if (data.profile) {
+          document.getElementById('displayName').value = data.profile.display_name || '';
+          document.getElementById('bio').value = data.profile.bio || '';
+          document.getElementById('profileUrl').value = data.profile.profile_url || '';
+          if(data.profile.profile_url) document.getElementById('profilePreview').src = data.profile.profile_url;
+        }
+      } catch (err) { console.error('Load failed'); }
+    }
+
+    // ฟังก์ชันสำหรับอ่านไฟล์รูปแล้วแปลงเป็น Base64
+    function previewAndConvertImage() {
+      const file = document.getElementById('imageFile').files[0];
+      const reader = new FileReader();
+      
+      reader.onloadend = function() {
+        const base64String = reader.result;
+        document.getElementById('profilePreview').src = base64String;
+        document.getElementById('profileUrl').value = base64String;
       }
-    } catch (err) { console.error('Failed to load profile'); }
-  }
-  async function updateProfile() {
-    const display_name = document.getElementById('displayName').value;
-    const bio = document.getElementById('bio').value;
-    try {
-      const res = await fetch(`${window.APP_CONFIG.USER_URL}/api/users/me`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ display_name, bio })
-      });
-      if (res.ok) alert('อัปเดตโปรไฟล์สำเร็จ! 🎉');
-      else alert('เกิดข้อผิดพลาดในการอัปเดต');
-    } catch (err) { alert('ไม่สามารถเชื่อมต่อ User Service ได้'); }
-  }
-  fetchProfile();
-</script>
+      
+      if (file) {
+        // เช็คขนาดไฟล์ก่อน (ถ้าเกินจะแจ้งเตือน เพราะ Base64 ใหญ่เกินอาจบันทึกลง DB ไม่ผ่าน)
+        if(file.size > 200000) { // ขีดจำกัดประมาณ 200KB
+            alert('รูปภาพใหญ่เกินไป กรุณาเลือกรูปขนาดเล็กกว่า 200KB ครับ');
+            document.getElementById('imageFile').value = '';
+            return;
+        }
+        reader.readAsDataURL(file);
+      }
+    }
+
+    async function updateProfile() {
+      const display_name = document.getElementById('displayName').value;
+      const bio = document.getElementById('bio').value;
+      const profile_url = document.getElementById('profileUrl').value;
+      
+      try {
+        const res = await fetch(`${window.APP_CONFIG.USER_URL}/api/users/me`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ display_name, bio, profile_url })
+        });
+        if (res.ok) alert('อัปเดตโปรไฟล์เรียบร้อย! ✨ กลับไปดูที่หน้า Dashboard ได้เลย');
+        else alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      } catch (err) { alert('Error Connection!'); }
+    }
+
+    function logout() { localStorage.removeItem('token'); window.location.href = 'index.html'; }
+    
+    // เรียกใช้งานดึงข้อมูลตอนโหลดหน้า
+    fetchProfile();
+  </script>
 </body>
 </html>
