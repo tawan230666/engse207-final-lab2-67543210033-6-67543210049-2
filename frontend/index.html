@@ -8,8 +8,12 @@
   <style>body { background-color: #f8fafc; color: #334155; } .sidebar-link.active { border-left: 4px solid #10b981; background-color: #ecfdf5; color: #047857; font-weight: 600; }</style>
 </head>
 <body class="min-h-screen">
-  <div id="appLoader" class="fixed inset-0 bg-slate-50 z-[100] flex flex-col items-center justify-center"><i class="fa-solid fa-circle-notch fa-spin text-5xl text-emerald-500 mb-4"></i><p class="font-bold text-slate-500">Loading system...</p></div>
-  <div id="authWrapper" class="fixed inset-0 bg-slate-900 flex items-center justify-center z-50">
+  <div id="appLoader" class="fixed inset-0 bg-slate-50 z-[100] flex flex-col items-center justify-center">
+    <i class="fa-solid fa-circle-notch fa-spin text-5xl text-emerald-500 mb-4"></i>
+    <p class="font-bold text-slate-500">Loading system...</p>
+  </div>
+
+  <div id="authWrapper" class="fixed inset-0 bg-slate-900 items-center justify-center z-50 hidden">
     <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
       <div class="text-center mb-6"><h2 class="text-3xl font-bold text-slate-800">🔑 Login</h2></div>
       <div id="loginForm">
@@ -53,7 +57,7 @@
             <div id="navName" class="font-bold text-slate-700">Loading...</div>
             <div id="navRole" class="text-xs font-bold text-blue-500 uppercase">MEMBER</div>
           </div>
-          <div class="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center text-slate-500 text-xl font-bold">
+          <div class="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center text-slate-500 text-xl font-bold border-2 border-slate-100">
             <img id="navAvatar" src="" class="w-full h-full object-cover">
           </div>
         </div>
@@ -126,13 +130,17 @@
     const API = window.APP_CONFIG;
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
 
-    window.onload = () => { 
+    window.onload = async () => { 
       if(token) { 
-        document.getElementById('authWrapper').classList.add('hidden'); 
+        await loadData();
+        document.getElementById('appLoader').classList.add('hidden');
         document.getElementById('dashboardSection').classList.remove('hidden'); 
-        await loadData(); const ldr=document.getElementById("appLoader"); if(ldr) ldr.classList.add("hidden"); 
-      } 
-    } else { const ldr=document.getElementById("appLoader"); if(ldr) ldr.classList.add("hidden"); };
+      } else {
+        document.getElementById('appLoader').classList.add('hidden');
+        document.getElementById('authWrapper').classList.remove('hidden');
+        document.getElementById('authWrapper').classList.add('flex');
+      }
+    };
 
     function toggleAuth(t) { 
       document.getElementById('loginForm').style.display = t==='login'?'block':'none'; 
@@ -142,25 +150,34 @@
     async function login() {
       const res = await fetch(API.AUTH_URL+'/api/auth/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:document.getElementById('loginEmail').value, password:document.getElementById('loginPassword').value})});
       const d = await res.json(); 
-      if(d.token) { localStorage.setItem('jwt_token', d.token); location.reload(); } else alert('Login Failed');
+      if(d.token) { localStorage.setItem('jwt_token', d.token); location.reload(); } else alert('❌ อีเมลหรือรหัสผ่านผิด');
     }
 
+    // 💡 ซ่อมฟังก์ชัน Register ให้แจ้งเตือนชัวร์ๆ
     async function register() {
-  const btn = document.querySelector('#registerForm button'); 
-  const oldText = btn.innerText; btn.innerText = 'กำลังสมัคร...';
-  try {
-    const res = await fetch(API.AUTH_URL+'/api/auth/register', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:document.getElementById('regUsername').value, email:document.getElementById('regEmail').value, password:document.getElementById('regPassword').value})});
-    const d = await res.json(); 
-    btn.innerText = oldText;
-    if(res.ok) { alert('✅ สมัครสมาชิกสำเร็จ! กรุณาล็อกอิน'); toggleAuth('login'); } else { alert('❌ ' + (d.error || 'อีเมลหรือชื่อซ้ำครับ')); }
-  } catch(e) { btn.innerText = oldText; alert('❌ เชื่อมต่อไม่ได้'); }
-}
+      const btn = document.querySelector('#registerForm button'); 
+      const oldText = btn.innerText; 
+      btn.innerText = 'กำลังสมัคร...';
+      try {
+        const res = await fetch(API.AUTH_URL+'/api/auth/register', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:document.getElementById('regUsername').value, email:document.getElementById('regEmail').value, password:document.getElementById('regPassword').value})});
+        const d = await res.json(); 
+        btn.innerText = oldText;
+        if(res.ok) { 
+            alert('✅ สมัครสมาชิกสำเร็จ! กรุณาล็อกอิน'); 
+            toggleAuth('login'); 
+        } else { 
+            alert('❌ ' + (d.error || 'อีเมลหรือชื่อผู้ใช้นี้มีในระบบแล้ว')); 
+        }
+      } catch(e) { 
+        btn.innerText = oldText; 
+        alert('❌ ไม่สามารถเชื่อมต่อกับ Auth Service ได้'); 
+      }
+    }
 
     function logout() { localStorage.removeItem('jwt_token'); localStorage.removeItem('token'); location.reload(); }
 
     async function loadData() {
       try {
-        // Load User Profile & Role
         const uRes = await fetch(API.USER_URL+'/api/users/me', {headers:{'Authorization':'Bearer '+token}}); 
         if(!uRes.ok) return logout();
         const u = await uRes.json();
@@ -168,7 +185,7 @@
         document.getElementById('navName').innerText = u.profile.display_name || u.profile.username || 'User';
         const roleEl = document.getElementById('navRole');
         roleEl.innerText = u.profile.role.toUpperCase();
-        document.getElementById('navAvatar').src = `https://ui-avatars.com/api/?name=${u.profile.username || 'U'}&background=random`;
+        document.getElementById('navAvatar').src = u.profile.avatar_url || `https://ui-avatars.com/api/?name=${u.profile.username || 'U'}&background=random`;
 
         if(u.profile.role === 'admin') { 
           roleEl.classList.replace('text-blue-500', 'text-purple-500');
@@ -176,7 +193,6 @@
           document.getElementById('btnNewTask').style.display = 'none'; 
         }
         
-        // Load Tasks
         const tRes = await fetch(API.TASK_URL+'/api/tasks', {headers:{'Authorization':'Bearer '+token}}); 
         const tData = await tRes.json();
         
@@ -197,15 +213,14 @@
             <td class="p-4"><span class="text-[10px] font-bold uppercase px-2 py-1 rounded-md ${priorityColor}">${t.priority}</span></td>
             <td class="p-4"><span class="text-[10px] font-bold uppercase px-2 py-1 rounded-md ${statusColor}">${t.status.replace('_', ' ')}</span></td>
             <td class="p-4 text-right whitespace-nowrap">
-              <button onclick="openModal(${t.id}, '${t.title}', '${t.description||''}', '${t.status}', '${t.priority}')" class="text-blue-500 hover:text-blue-700 mr-4 transition-colors"><i class="fa-solid fa-pen"></i></button>
-              <button onclick="deleteTask(${t.id})" class="text-rose-400 hover:text-rose-600 transition-colors"><i class="fa-solid fa-trash"></i></button>
+              <button onclick="openModal(${t.id}, '${t.title}', '${t.description||''}', '${t.status}', '${t.priority}')" class="text-blue-500 hover:text-blue-700 mr-4 transition-colors" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
+              <button onclick="deleteTask(${t.id})" class="text-rose-400 hover:text-rose-600 transition-colors" title="ลบ"><i class="fa-solid fa-trash"></i></button>
             </td>
           </tr>`;
         }).join('');
       } catch(e) {}
     }
 
-    // ฟังก์ชันจัดการ Modal แก้ไขและสร้าง
     function openModal(id='', title='', desc='', status='TODO', priority='medium') {
       document.getElementById('modalTitle').innerText = id ? 'Edit Task' : 'New Task';
       document.getElementById('taskId').value = id;
