@@ -2,154 +2,239 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="engse207-frontend-health" content="frontend-ok">
   <title>ENGSE207 | Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #334155; }
-    .sidebar-link { border-left: 4px solid transparent; }
-    .sidebar-link.active { border-left: 4px solid #10b981; background-color: #ecfdf5; color: #047857; font-weight: 600; }
-  </style>
+  <style>body { background-color: #f8fafc; color: #334155; } .sidebar-link.active { border-left: 4px solid #10b981; background-color: #ecfdf5; color: #047857; font-weight: 600; }</style>
 </head>
 <body class="min-h-screen">
   <div id="authWrapper" class="fixed inset-0 bg-slate-900 flex items-center justify-center z-50">
     <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-      <div class="text-center mb-6"><h2 class="text-3xl font-bold text-slate-800 mb-2">🔑 Login</h2><p class="text-slate-500 italic">Final Lab (Set 1 + Set 2)</p></div>
-      <div class="mb-6 p-4 bg-amber-50 rounded-lg text-xs text-amber-700"><b>💡 Seed Users:</b><br>• Member: alice@lab.local / alice123<br>• Admin: admin@lab.local / adminpass</div>
+      <div class="text-center mb-6"><h2 class="text-3xl font-bold text-slate-800">🔑 Login</h2></div>
       <div id="loginForm">
-        <input type="email" id="loginEmail" value="admin@lab.local" class="w-full p-3 mb-4 border rounded-lg outline-none focus:border-emerald-500">
-        <input type="password" id="loginPassword" value="adminpass" class="w-full p-3 mb-6 border rounded-lg outline-none focus:border-emerald-500">
-        <button onclick="login()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700">เข้าสู่ระบบ</button>
-        <p class="mt-4 text-center text-sm text-slate-500">ยังไม่มีบัญชี? <button onclick="toggleAuth('register')" class="text-blue-600 font-semibold hover:underline">สมัครสมาชิก</button></p>
+        <input type="email" id="loginEmail" value="admin@lab.local" class="w-full p-3 mb-4 border rounded-lg" placeholder="Email">
+        <input type="password" id="loginPassword" value="adminpass" class="w-full p-3 mb-6 border rounded-lg" placeholder="Password">
+        <button onclick="login()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">เข้าสู่ระบบ</button>
+        <p class="mt-4 text-center text-sm"><button onclick="toggleAuth('register')" class="text-blue-600">สมัครสมาชิก</button></p>
       </div>
       <div id="registerForm" class="hidden">
-        <input type="text" id="regUsername" placeholder="Username" class="w-full p-3 mb-4 border rounded-lg outline-none focus:border-emerald-500">
-        <input type="email" id="regEmail" placeholder="Email" class="w-full p-3 mb-4 border rounded-lg outline-none focus:border-emerald-500">
-        <input type="password" id="regPassword" placeholder="Password" class="w-full p-3 mb-6 border rounded-lg outline-none focus:border-emerald-500">
-        <button onclick="register()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700">สมัครสมาชิก</button>
-        <p class="mt-4 text-center text-sm text-slate-500">มีบัญชีแล้ว? <button onclick="toggleAuth('login')" class="text-blue-600 font-semibold hover:underline">เข้าสู่ระบบ</button></p>
+        <input type="text" id="regUsername" placeholder="Username" class="w-full p-3 mb-4 border rounded-lg">
+        <input type="email" id="regEmail" placeholder="Email" class="w-full p-3 mb-4 border rounded-lg">
+        <input type="password" id="regPassword" placeholder="Password" class="w-full p-3 mb-6 border rounded-lg">
+        <button onclick="register()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg">สมัครสมาชิก</button>
+        <p class="mt-4 text-center text-sm"><button onclick="toggleAuth('login')" class="text-blue-600">กลับไปเข้าสู่ระบบ</button></p>
       </div>
     </div>
   </div>
 
-  <div id="dashboardSection" class="flex h-screen hidden">
-    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between z-10">
+  <div id="dashboardSection" class="flex h-screen overflow-hidden hidden">
+    <aside class="w-64 bg-white border-r p-4 flex flex-col justify-between">
       <div>
-        <div class="h-16 flex items-center px-6 border-b border-slate-100 gap-3"><span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded">ENGSE207</span></div>
-        <div class="p-4 space-y-6">
-          <div>
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-2">OVERVIEW</p>
-            <button id="nav-tasks" onclick="switchMainView('tasks')" class="w-full text-left sidebar-link active flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition-all"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Dashboard</button>
-            <a href="profile.html" class="sidebar-link flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-all"><span class="w-2 h-2 rounded-full bg-slate-300"></span> Profile</a>
-            <div id="adminMenu" class="hidden flex-col gap-1 mt-1">
-              <p class="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-1 mt-4 px-2">ADMIN PANEL</p>
-              <button id="nav-users" onclick="switchMainView('users')" class="w-full text-left sidebar-link flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-all"><span class="w-2 h-2 rounded-full bg-purple-500"></span> Users Directory</button>
-              <a href="logs.html" target="_blank" class="sidebar-link flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-all"><span class="w-2 h-2 rounded-full bg-purple-500"></span> Log Dashboard ↗</a>
-            </div>
+        <div class="mb-6 px-4"><span class="bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded">ENGSE207</span></div>
+        <div class="px-4 text-xs font-bold text-slate-400 mb-2">OVERVIEW</div>
+        <button onclick="window.location.reload()" class="sidebar-link active w-full text-left px-4 py-2 mb-2 rounded"><i class="fa-solid fa-table-columns mr-2"></i> Dashboard</button>
+        <button onclick="window.location.href='profile.html'" class="sidebar-link w-full text-left px-4 py-2 mb-2 rounded text-slate-500"><i class="fa-solid fa-user mr-2"></i> Profile</button>
+        
+        <div id="adminMenu" class="hidden mt-4">
+          <p class="text-xs font-bold text-purple-400 mb-2 px-4">ADMIN PANEL</p>
+          <button class="sidebar-link w-full text-left px-4 py-2 mb-2 rounded text-slate-500"><i class="fa-solid fa-users mr-2"></i> Users Directory</button>
+          <button onclick="window.open('logs.html')" class="sidebar-link w-full text-left px-4 py-2 rounded text-slate-500"><i class="fa-solid fa-chart-line mr-2"></i> Log Dashboard ↗</button>
+        </div>
+      </div>
+      <button onclick="logout()" class="text-rose-500 font-bold p-2 bg-rose-50 rounded hover:bg-rose-100"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+      <header class="bg-white border-b px-8 py-4 flex justify-between items-center shrink-0">
+        <h1 class="text-3xl font-bold text-slate-800">System overview</h1>
+        <div class="flex items-center gap-3">
+          <div class="text-right">
+            <div id="navName" class="font-bold text-slate-700">Loading...</div>
+            <div id="navRole" class="text-xs font-bold text-blue-500 uppercase">MEMBER</div>
+          </div>
+          <div class="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center text-slate-500 text-xl font-bold">
+            <img id="navAvatar" src="" class="w-full h-full object-cover">
           </div>
         </div>
-      </div>
-      <div class="p-6"><button onclick="logout()" class="w-full flex items-center justify-center gap-2 text-sm font-semibold text-rose-500 bg-rose-50 py-2.5 rounded-xl hover:bg-rose-100"><i class="fa-solid fa-right-from-bracket"></i> Logout</button></div>
-    </aside>
-    <main class="flex-1 bg-[#f8fafc] overflow-y-auto p-10">
-      <header class="flex justify-between items-center mb-10">
-        <h1 id="pageTitle" class="text-3xl font-bold text-slate-800">System overview</h1>
-        <div class="flex items-center gap-4 bg-white p-2 pr-6 rounded-full shadow-sm border border-slate-200">
-          <img id="navUserImg" src="https://i.pravatar.cc/150?u=guest" class="w-10 h-10 rounded-full object-cover">
-          <div><p id="navUserName" class="text-sm font-bold text-slate-700">User</p><p id="navUserRole" class="text-[10px] font-bold text-blue-500 uppercase">MEMBER</p></div>
-        </div>
       </header>
-      <div id="view-tasks">
-        <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-slate-800">Task board</h2><button onclick="toggleTaskModal()" class="bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-200">+ new task</button></div>
-        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-          <table class="w-full text-left">
-            <thead class="bg-slate-50 border-b border-slate-200"><tr><th class="p-4 text-xs font-bold text-slate-400 w-10 text-center">ID</th><th class="p-4 text-xs font-bold text-slate-400">TITLE</th><th class="p-4 text-xs font-bold text-slate-400 text-center">OWNER</th><th class="p-4 text-xs font-bold text-slate-400 text-center">PRIORITY</th><th class="p-4 text-xs font-bold text-slate-400 text-center">STATUS</th><th class="p-4 text-xs font-bold text-slate-400 text-right">ACTION</th></tr></thead>
-            <tbody id="taskTableBody"></tbody>
-          </table>
+
+      <div class="p-8 flex-1 overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-slate-800">Task board</h2>
+          <button id="btnNewTask" onclick="openModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2 rounded-lg font-bold shadow-sm transition-colors">+ new task</button>
         </div>
-      </div>
-      <div id="view-users" class="hidden">
-        <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-slate-800">Users Directory</h2></div>
-        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-          <table class="w-full text-left">
-            <thead class="bg-slate-50 border-b border-slate-200"><tr><th class="p-4 text-xs font-bold text-slate-400">User ID</th><th class="p-4 text-xs font-bold text-slate-400">Username</th><th class="p-4 text-xs font-bold text-slate-400">Email</th><th class="p-4 text-xs font-bold text-slate-400 text-center">Role</th></tr></thead>
-            <tbody id="userTableBody"></tbody>
+        
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-50 border-b">
+              <tr>
+                <th class="p-4 text-slate-400 font-bold text-sm">ID</th>
+                <th class="p-4 text-slate-400 font-bold text-sm">TITLE</th>
+                <th class="p-4 text-slate-400 font-bold text-sm">OWNER</th>
+                <th class="p-4 text-slate-400 font-bold text-sm">PRIORITY</th>
+                <th class="p-4 text-slate-400 font-bold text-sm">STATUS</th>
+                <th class="p-4 text-slate-400 font-bold text-sm text-right">ACTION</th>
+              </tr>
+            </thead>
+            <tbody id="taskBody" class="divide-y text-slate-600"></tbody>
           </table>
         </div>
       </div>
     </main>
   </div>
-  <div id="taskModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 hidden transition-all">
-    <div class="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl border border-slate-100">
-      <h3 class="text-2xl font-bold mb-6 text-slate-800">New Task</h3>
-      <input type="text" id="taskTitle" placeholder="Task Title" class="w-full p-3 mb-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
-      <input type="text" id="taskDesc" placeholder="Description" class="w-full p-3 mb-6 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
-      <div class="flex gap-4 mb-8">
-        <select id="taskPriority" class="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select>
-        <select id="taskStatus" class="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium"><option value="TODO" selected>To Do</option><option value="IN_PROGRESS">In Progress</option><option value="DONE">Done</option></select>
+
+  <div id="taskModal" class="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+      <h2 id="modalTitle" class="text-2xl font-bold mb-4">New Task</h2>
+      <input type="hidden" id="taskId">
+      <div class="mb-4">
+        <label class="block text-sm font-bold text-slate-500 mb-1">Title</label>
+        <input type="text" id="taskTitle" class="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-emerald-500">
       </div>
-      <div class="flex gap-3 justify-end"><button onclick="toggleTaskModal()" class="px-6 py-3 rounded-xl font-bold text-slate-500 bg-slate-100 hover:bg-slate-200">Cancel</button><button onclick="createTask()" class="px-6 py-3 rounded-xl font-bold text-white bg-emerald-500 hover:bg-emerald-600">Save Task</button></div>
+      <div class="mb-4">
+        <label class="block text-sm font-bold text-slate-500 mb-1">Description</label>
+        <textarea id="taskDesc" rows="3" class="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+      </div>
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div>
+          <label class="block text-sm font-bold text-slate-500 mb-1">Status</label>
+          <select id="taskStatus" class="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-emerald-500">
+            <option value="TODO">TODO</option>
+            <option value="IN_PROGRESS">IN PROGRESS</option>
+            <option value="DONE">DONE</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-slate-500 mb-1">Priority</label>
+          <select id="taskPriority" class="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-emerald-500">
+            <option value="low">LOW</option>
+            <option value="medium">MEDIUM</option>
+            <option value="high">HIGH</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button onclick="closeModal()" class="px-5 py-2 rounded-lg text-slate-500 font-bold hover:bg-slate-100 transition-colors">Cancel</button>
+        <button onclick="saveTask()" class="px-5 py-2 rounded-lg bg-emerald-500 text-white font-bold hover:bg-emerald-600 transition-colors shadow-md">Save Task</button>
+      </div>
     </div>
   </div>
+
   <script src="config.js"></script>
   <script>
-    const token = localStorage.getItem('token');
-    window.onload = () => { if (token) { document.getElementById('authWrapper').style.display = 'none'; document.getElementById('dashboardSection').style.display = 'flex'; updateNavInfo(); fetchTasks(); } };
-    function toggleAuth(t) { document.getElementById('loginForm').style.display = t === 'login' ? 'block' : 'none'; document.getElementById('registerForm').style.display = t === 'register' ? 'block' : 'none'; }
-    function toggleTaskModal() { document.getElementById('taskModal').classList.toggle('hidden'); }
-    function switchMainView(view) {
-      document.getElementById('nav-tasks').classList.remove('active', 'bg-emerald-50', 'text-emerald-700'); document.getElementById('nav-users').classList.remove('active', 'bg-emerald-50', 'text-emerald-700');
-      document.getElementById('view-tasks').classList.add('hidden'); document.getElementById('view-users').classList.add('hidden');
-      if (view === 'tasks') { document.getElementById('nav-tasks').classList.add('active', 'bg-emerald-50', 'text-emerald-700'); document.getElementById('view-tasks').classList.remove('hidden'); document.getElementById('pageTitle').innerText = 'System overview'; fetchTasks(); }
-      else if (view === 'users') { document.getElementById('nav-users').classList.add('active', 'bg-emerald-50', 'text-emerald-700'); document.getElementById('view-users').classList.remove('hidden'); document.getElementById('pageTitle').innerText = 'Users Management'; fetchUsers(); }
+    const API = window.APP_CONFIG;
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
+
+    window.onload = () => { 
+      if(token) { 
+        document.getElementById('authWrapper').classList.add('hidden'); 
+        document.getElementById('dashboardSection').classList.remove('hidden'); 
+        loadData(); 
+      } 
+    };
+
+    function toggleAuth(t) { 
+      document.getElementById('loginForm').style.display = t==='login'?'block':'none'; 
+      document.getElementById('registerForm').style.display = t==='register'?'block':'none'; 
     }
-    async function updateNavInfo() {
-      try {
-        const res = await fetch(`${window.APP_CONFIG.USER_URL}/api/users/me`, { headers: { 'Authorization': `Bearer ${token}` } });
-        const d = await res.json();
-        if (d.profile) {
-          document.getElementById('navUserName').innerText = d.profile.display_name || d.profile.username || 'User'; document.getElementById('navUserRole').innerText = d.profile.role;
-          if(d.profile.role === 'admin') { document.getElementById('navUserRole').className = "text-[10px] font-bold text-purple-500 uppercase tracking-widest"; document.getElementById('adminMenu').classList.remove('hidden'); document.getElementById('adminMenu').classList.add('flex'); }
-          if (d.profile.profile_url) document.getElementById('navUserImg').src = d.profile.profile_url;
-        }
-      } catch (e) {}
-    }
-    async function fetchTasks() {
-      try {
-        const res = await fetch(`${window.APP_CONFIG.TASK_URL}/api/tasks`, { headers: { 'Authorization': `Bearer ${token}` } }); const d = await res.json();
-        const body = document.getElementById('taskTableBody'); body.innerHTML = '';
-        if(d.tasks) d.tasks.forEach(t => {
-          let pColor = t.priority === 'high' ? 'bg-rose-100 text-rose-600' : (t.priority === 'medium' ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'); let sColor = t.status === 'DONE' ? 'bg-emerald-100 text-emerald-600' : (t.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500');
-          body.innerHTML += `<tr class="border-b border-slate-50 hover:bg-slate-50 transition"><td class="p-4 text-center font-mono text-xs text-slate-400">#${t.id}</td><td class="p-4"><div class="font-bold text-slate-800 text-sm">${t.title}</div><div class="text-xs text-slate-400 mt-1">${t.description||''}</div></td><td class="p-4 text-center"><span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded">👤 UID: ${t.user_id}</span></td><td class="p-4 text-center"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest ${pColor}">${t.priority}</span></td><td class="p-4 text-center"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest ${sColor}">${t.status.replace('_',' ')}</span></td><td class="p-4 text-right"><button onclick="openEditModal(${t.id}, '${t.title}', '${t.description || ""}', '${t.status}', '${t.priority}')" class="text-blue-500 hover:text-blue-700 mr-4 transition-colors" title="แก้ไขงาน"><i class="fa-solid fa-pen"></i></button> <button onclick="deleteTask(${t.id})" class="text-rose-400 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition"><i class="fa-solid fa-trash"></i></button></td></tr>`;
-        });
-      } catch (e) {}
-    }
-    async function fetchUsers() {
-      try {
-        const res = await fetch(`${window.APP_CONFIG.USER_URL}/api/users`, { headers: { 'Authorization': `Bearer ${token}` } });
-        if (res.status === 403) { alert('🚫 403 Forbidden! สำหรับ Admin เท่านั้น'); switchMainView('tasks'); return; }
-        const d = await res.json(); const body = document.getElementById('userTableBody'); body.innerHTML = '';
-        if(d.users) d.users.forEach(u => {
-          let roleBadge = u.role === 'admin' ? '<span class="bg-purple-100 text-purple-600 px-2 py-1 rounded text-[10px] font-bold uppercase">Admin</span>' : '<span class="bg-blue-100 text-blue-600 px-2 py-1 rounded text-[10px] font-bold uppercase">Member</span>';
-          body.innerHTML += `<tr class="border-b border-slate-50 hover:bg-slate-50"><td class="p-4 font-mono text-xs text-slate-400">UID-${u.user_id}</td><td class="p-4 font-bold text-slate-700 text-sm">${u.username || u.display_name || '-'}</td><td class="p-4 text-slate-500 text-sm">${u.email}</td><td class="p-4 text-center">${roleBadge}</td></tr>`;
-        });
-      } catch (e) {}
-    }
-    async function createTask() {
-      const title = document.getElementById('taskTitle').value, description = document.getElementById('taskDesc').value, priority = document.getElementById('taskPriority').value, status = document.getElementById('taskStatus').value;
-      if(!title) return; await fetch(`${window.APP_CONFIG.TASK_URL}/api/tasks`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ title, description, priority, status }) }); toggleTaskModal(); fetchTasks();
-    }
-    async function deleteTask(id) { if(confirm('ลบงาน?')) { const res = await fetch(`${window.APP_CONFIG.TASK_URL}/api/tasks/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); if(res.status === 403) alert('🚫 403 Forbidden! คุณไม่มีสิทธิ์ลบงานคนอื่น'); fetchTasks(); } }
+
     async function login() {
-      try { const res = await fetch(`${window.APP_CONFIG.AUTH_URL}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: document.getElementById('loginEmail').value, password: document.getElementById('loginPassword').value }) }); const d = await res.json(); if(d.token) { localStorage.setItem('token', d.token); window.location.reload(); } else alert(d.error || 'ล้มเหลว'); } catch(e) { alert('ไม่สามารถเชื่อมต่อ Server ได้ (' + window.APP_CONFIG.AUTH_URL + ')'); }
+      const res = await fetch(API.AUTH_URL+'/api/auth/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:document.getElementById('loginEmail').value, password:document.getElementById('loginPassword').value})});
+      const d = await res.json(); 
+      if(d.token) { localStorage.setItem('jwt_token', d.token); location.reload(); } else alert('Login Failed');
     }
+
     async function register() {
-      try { const res = await fetch(`${window.APP_CONFIG.AUTH_URL}/api/auth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('regUsername').value, email: document.getElementById('regEmail').value, password: document.getElementById('regPassword').value }) }); if(res.ok) { alert('สำเร็จ! กรุณาเข้าสู่ระบบ'); toggleAuth('login'); } else { const d = await res.json(); alert(d.error); } } catch(e) {}
+      const res = await fetch(API.AUTH_URL+'/api/auth/register', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:document.getElementById('regUsername').value, email:document.getElementById('regEmail').value, password:document.getElementById('regPassword').value})});
+      if(res.ok) location.reload(); else alert('Register Failed');
     }
-    function logout() { localStorage.removeItem('token'); window.location.reload(); }
+
+    function logout() { localStorage.removeItem('jwt_token'); localStorage.removeItem('token'); location.reload(); }
+
+    async function loadData() {
+      try {
+        // Load User Profile & Role
+        const uRes = await fetch(API.USER_URL+'/api/users/me', {headers:{'Authorization':'Bearer '+token}}); 
+        if(!uRes.ok) return logout();
+        const u = await uRes.json();
+        
+        document.getElementById('navName').innerText = u.profile.display_name || u.profile.username || 'User';
+        const roleEl = document.getElementById('navRole');
+        roleEl.innerText = u.profile.role.toUpperCase();
+        document.getElementById('navAvatar').src = `https://ui-avatars.com/api/?name=${u.profile.username || 'U'}&background=random`;
+
+        if(u.profile.role === 'admin') { 
+          roleEl.classList.replace('text-blue-500', 'text-purple-500');
+          document.getElementById('adminMenu').classList.remove('hidden'); 
+          document.getElementById('btnNewTask').style.display = 'none'; 
+        }
+        
+        // Load Tasks
+        const tRes = await fetch(API.TASK_URL+'/api/tasks', {headers:{'Authorization':'Bearer '+token}}); 
+        const tData = await tRes.json();
+        
+        const tbody = document.getElementById('taskBody');
+        if(!tData.tasks || tData.tasks.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-400">No tasks found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = (tData.tasks||[]).map(t => {
+          const priorityColor = t.priority === 'high' ? 'bg-rose-100 text-rose-600' : (t.priority === 'low' ? 'bg-slate-100 text-slate-500' : 'bg-amber-100 text-amber-600');
+          const statusColor = t.status === 'DONE' ? 'bg-emerald-100 text-emerald-600' : (t.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500');
+          
+          return `<tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-4 text-slate-400">#${t.id}</td>
+            <td class="p-4 font-bold text-slate-700">${t.title}<div class="text-xs font-normal text-slate-400 mt-1">${t.description || ''}</div></td>
+            <td class="p-4"><span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md"><i class="fa-solid fa-user mr-1"></i> UID: ${t.user_id}</span></td>
+            <td class="p-4"><span class="text-[10px] font-bold uppercase px-2 py-1 rounded-md ${priorityColor}">${t.priority}</span></td>
+            <td class="p-4"><span class="text-[10px] font-bold uppercase px-2 py-1 rounded-md ${statusColor}">${t.status.replace('_', ' ')}</span></td>
+            <td class="p-4 text-right whitespace-nowrap">
+              <button onclick="openModal(${t.id}, '${t.title}', '${t.description||''}', '${t.status}', '${t.priority}')" class="text-blue-500 hover:text-blue-700 mr-4 transition-colors"><i class="fa-solid fa-pen"></i></button>
+              <button onclick="deleteTask(${t.id})" class="text-rose-400 hover:text-rose-600 transition-colors"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          </tr>`;
+        }).join('');
+      } catch(e) {}
+    }
+
+    // ฟังก์ชันจัดการ Modal แก้ไขและสร้าง
+    function openModal(id='', title='', desc='', status='TODO', priority='medium') {
+      document.getElementById('modalTitle').innerText = id ? 'Edit Task' : 'New Task';
+      document.getElementById('taskId').value = id;
+      document.getElementById('taskTitle').value = title;
+      document.getElementById('taskDesc').value = desc;
+      document.getElementById('taskStatus').value = status;
+      document.getElementById('taskPriority').value = priority;
+      document.getElementById('taskModal').classList.remove('hidden');
+    }
+
+    function closeModal() { document.getElementById('taskModal').classList.add('hidden'); }
+
+    async function saveTask() {
+      const id = document.getElementById('taskId').value;
+      const payload = {
+         title: document.getElementById('taskTitle').value,
+         description: document.getElementById('taskDesc').value,
+         status: document.getElementById('taskStatus').value,
+         priority: document.getElementById('taskPriority').value
+      };
+      const url = id ? `${API.TASK_URL}/api/tasks/${id}` : `${API.TASK_URL}/api/tasks`;
+      const method = id ? 'PUT' : 'POST';
+
+      try {
+        const res = await fetch(url, { method: method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if(res.ok) { closeModal(); loadData(); } else alert('Failed to save task.');
+      } catch(e) { alert('Network error'); }
+    }
+
+    async function deleteTask(id) {
+      if(!confirm('Are you sure you want to delete this task?')) return;
+      try {
+         await fetch(`${API.TASK_URL}/api/tasks/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+         loadData();
+      } catch(e) { alert('Network error'); }
+    }
   </script>
 </body>
 </html>
