@@ -1,26 +1,9 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const { initDB } = require('./db/db');
-const userRoutes = require('./routes/users');
-
-const app = express();
-const PORT = process.env.PORT || 3003;
-
-app.use(cors());
-app.use(express.json());
-
-app.use('/api/users', userRoutes);
-app.use((req, res) => res.status(404).json({ error: 'Not found' }));
-
+const express=require('express'), cors=require('cors'), {pool}=require('./db/db'), app=express();
+app.use(cors()); app.use(express.json()); app.use('/api/users', require('./routes/users'));
 async function start() {
-  await initDB();
-  app.listen(PORT, () => {
-    console.log(`[user-service] running on port ${PORT}`);
-  });
+  while(true) {
+    try { await pool.query('SELECT 1'); await pool.query(`CREATE TABLE IF NOT EXISTS user_profiles (id SERIAL PRIMARY KEY, user_id INTEGER UNIQUE NOT NULL, username VARCHAR(50), email VARCHAR(100), role VARCHAR(20) DEFAULT 'member', display_name VARCHAR(100), bio TEXT, avatar_url VARCHAR(255), updated_at TIMESTAMP DEFAULT NOW());`); break; } catch(e) { await new Promise(r=>setTimeout(r, 2000)); }
+  }
+  app.listen(3003, () => console.log('User OK'));
 }
-
-start().catch(err => {
-  console.error('Failed to start user-service:', err);
-  process.exit(1);
-});
+start();

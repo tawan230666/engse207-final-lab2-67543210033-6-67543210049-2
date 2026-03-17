@@ -3,105 +3,69 @@ const bcrypt = require('bcryptjs');
 const { pool } = require('../db/db');
 const { generateToken, verifyToken } = require('../middleware/jwtUtils');
 const router = express.Router();
+const DUMMY_HASH = '$2b$10$CwTycUXWue0Thq9StjUM0uJ8y0R6VQwWi4KFOeFHrgb3R04QLbL7a';
 
-async function logEvent(level, event, userId, message, meta = {}) {
-  try {
-    await pool.query(
-      'INSERT INTO logs (level, event, user_id, message, meta) VALUES ($1, $2, $3, $4, $5)',
-      [level, event, userId, message, JSON.stringify(meta)]
-    );
-  } catch (err) {}
+async function logEvent({ level, event, userId, ip, message, meta }) {
+  try { await pool.query('INSERT INTO logs (level, event, user_id, ip_address, message, meta) VALUES ($1,$2,$3,$4,$5,$6)', [level, event, userId || null, ip || null, message || null, meta ? JSON.stringify(meta) : null]); } catch (e) {}
 }
 
 router.post('/register', async (req, res) => {
   const { username, email, password } = req.body;
-  if (!username || !email || !password) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-  if (password.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters' });
-  }
+  if (!username || !email || !password) return res.status(400).json({ error: 'ครบทุกช่อง' });
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const result = await pool.query(
-      'INSERT INTO users (username, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id, username, email, role',
-      [username, email.toLowerCase(), hashedPassword, 'member']
-    );
-    const user = result.rows[0];
-    await logEvent('INFO', 'REGISTER_SUCCESS', user.id, `User ${username} registered`);
-    res.status(201).json({ message: 'Registration successful', user });
-  } catch (err) {
-    if (err.code === '23505') {
-      return res.status(409).json({ error: 'Username or email already exists' });
-    }
-    console.error(err);
-    await logEvent('ERROR', 'REGISTER_FAILED', null, err.message);
-    res.status(500).json({ error: 'Server error' });
-  }
+    const exists = await pool.query('SELECT id FROM users WHERE email=$1 OR username=$2', [email.toLowerCase(), username]);
+    if (exists.rows.length > 0) return res.status(409).json({ error: 'Email หรือ Username ถูกใช้งานแล้ว' });
+    const hash = await bcrypt.hash(password, 10);
+    const r = await pool.query("INSERT INTO users (username, email, password_hash, role) VALUES ($1,$2,$3,'member') RETURNING id, username, email, role", [username, email.toLowerCase(), hash]);
+    await logEvent({ level: 'INFO', event: 'REGISTER_SUCCESS', userId: r.rows[0].id, ip: req.ip, message: `New user: ${username}` });
+    res.status(201).json({ message: 'Success', user: r.rows[0] });
+  } catch (err) { res.status(500).json({ error: 'Server Error' }); }
 });
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password required' });
-  }
   try {
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
-    const user = result.rows[0];
-    if (!user) {
-      await logEvent('WARN', 'LOGIN_FAILED', null, `Login attempt for unknown email: ${email}`);
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-    const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) {
-      await logEvent('WARN', 'LOGIN_FAILED', user.id, `Invalid password for ${email}`);
-      return res.status(401).json({ error: 'Invalid credentials' });
+    const r = await pool.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
+    const user = r.rows[0] || null;
+    const isValid = await bcrypt.compare(password, user ? user.password_hash : DUMMY_HASH);
+    if (!user || !isValid) {
+      await logEvent({ level: 'WARN', event: 'LOGIN_FAILED', ip: req.ip, message: `Failed login: ${email}` });
+      return res.status(401).json({ error: 'อีเมลหรือรหัสผ่านผิด' });
     }
     await pool.query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id]);
-    const token = generateToken({
-      sub: user.id,
-      email: user.email,
-      username: user.username,
-      role: user.role
-    });
-    await logEvent('INFO', 'LOGIN_SUCCESS', user.id, `User ${user.username} logged in`);
-    res.json({ token, user: { id: user.id, username: user.username, email: user.email, role: user.role } });
-  } catch (err) {
-    console.error(err);
-    await logEvent('ERROR', 'LOGIN_ERROR', null, err.message);
-    res.status(500).json({ error: 'Server error' });
-  }
+    const token = generateToken({ sub: user.id, email: user.email, role: user.role, username: user.username });
+    await logEvent({ level: 'INFO', event: 'LOGIN_SUCCESS', userId: user.id, ip: req.ip, message: `Logged in: ${user.username}` });
+    res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
+  } catch (err) { res.status(500).json({ error: 'Server Error' }); }
 });
 
 router.get('/verify', (req, res) => {
-  const token = req.headers.authorization?.split(' ')[1];
+  const token = (req.headers['authorization'] || '').split(' ')[1];
   if (!token) return res.status(401).json({ valid: false });
-  try {
-    const decoded = verifyToken(token);
-    res.json({ valid: true, user: decoded });
-  } catch (err) {
-    res.status(401).json({ valid: false, error: err.message });
-  }
+  try { res.json({ valid: true, user: verifyToken(token) }); } catch (e) { res.status(401).json({ valid: false }); }
 });
 
 router.get('/me', async (req, res) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  const token = (req.headers['authorization'] || '').split(' ')[1];
   try {
     const decoded = verifyToken(token);
-    const result = await pool.query(
-      'SELECT id, username, email, role, created_at, last_login FROM users WHERE id = $1',
-      [decoded.sub]
-    );
-    if (!result.rows[0]) return res.status(404).json({ error: 'User not found' });
-    res.json({ user: result.rows[0] });
-  } catch (err) {
-    res.status(401).json({ error: 'Invalid token' });
-  }
+    const r = await pool.query('SELECT id, username, email, role FROM users WHERE id = $1', [decoded.sub]);
+    res.json({ user: r.rows[0] });
+  } catch (e) { res.status(401).json({ error: 'Invalid token' }); }
 });
 
-router.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'auth-service' });
+// 💡 เพิ่ม API ดึง Logs ให้ Admin ใช้ (แก้ปัญหาค้างที่ "กำลังดึงข้อมูล...")
+router.get('/logs', async (req, res) => {
+  const token = (req.headers['authorization'] || '').split(' ')[1];
+  try {
+    const { verifyToken } = require('../middleware/jwtUtils');
+    const user = verifyToken(token);
+    if (user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+    const r = await pool.query('SELECT * FROM logs ORDER BY created_at DESC LIMIT 100');
+    const c = await pool.query('SELECT COUNT(*) FROM logs');
+    res.json({ logs: r.rows, total: parseInt(c.rows[0].count) });
+  } catch (e) { res.status(401).json({ error: 'Unauthorized' }); }
 });
 
+router.get('/health', (_, res) => res.json({ status: 'ok', service: 'auth-service' }));
 module.exports = router;

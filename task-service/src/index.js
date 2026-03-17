@@ -1,26 +1,9 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const { initDB } = require('./db/db');
-const taskRoutes = require('./routes/tasks');
-
-const app = express();
-const PORT = process.env.PORT || 3002;
-
-app.use(cors());
-app.use(express.json());
-
-app.use('/api/tasks', taskRoutes);
-app.use((req, res) => res.status(404).json({ error: 'Not found' }));
-
+const express=require('express'), cors=require('cors'), {pool}=require('./db/db'), app=express();
+app.use(cors()); app.use(express.json()); app.use('/api/tasks', require('./routes/tasks'));
 async function start() {
-  await initDB();
-  app.listen(PORT, () => {
-    console.log(`[task-service] running on port ${PORT}`);
-  });
+  while(true) {
+    try { await pool.query('SELECT 1'); await pool.query(`CREATE TABLE IF NOT EXISTS tasks (id SERIAL PRIMARY KEY, user_id INTEGER NOT NULL, title VARCHAR(200) NOT NULL, description TEXT, status VARCHAR(20) DEFAULT 'TODO', priority VARCHAR(10) DEFAULT 'medium', created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW());`); break; } catch(e) { await new Promise(r=>setTimeout(r, 2000)); }
+  }
+  app.listen(3002, () => console.log('Task OK'));
 }
-
-start().catch(err => {
-  console.error('Failed to start task-service:', err);
-  process.exit(1);
-});
+start();
