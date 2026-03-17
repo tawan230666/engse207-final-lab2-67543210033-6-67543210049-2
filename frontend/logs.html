@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>📊 Log Dashboard (Admin)</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg: #0f172a; --surface: #1e293b; --border: #334155; --text: #e2e8f0; --muted: #94a3b8; --blue: #3b82f6; --green: #22c55e; --yellow: #f59e0b; --red: #ef4444; }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1.2rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.5rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; text-align: center; }
+    .stat-label { color: var(--muted); font-size: 12px; text-transform: uppercase; font-weight: bold; }
+    .stat-value { font-size: 2.5rem; font-weight: 800; margin-top: 10px; }
+    .log-table { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .log-table-header { display: grid; grid-template-columns: 180px 150px 100px 180px 1fr; gap: 1rem; padding: 1rem 1.5rem; background: #162233; font-size: 12px; color: var(--muted); font-weight: bold; text-transform: uppercase; }
+    .log-row { display: grid; grid-template-columns: 180px 150px 100px 180px 1fr; gap: 1rem; padding: 1rem 1.5rem; border-top: 1px solid var(--border); font-size: 14px; align-items: center; }
+    .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+    .badge-INFO  { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.3); }
+    .badge-WARN  { background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+    .badge-ERROR { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.3); }
+    #login-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.95); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(5px); }
+    .login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem; width: 360px; }
+    .login-box input { width: 100%; background: #0f172a; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; margin-bottom: 15px; outline: none; }
+    .login-box button { width: 100%; background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="login-overlay" style="display:flex;">
+    <div class="login-box">
+      <h2 style="margin-bottom:20px; font-size:1.5rem; text-align:center;">📊 Log Admin Login</h2>
+      <input id="l-email" type="email" value="admin@lab.local">
+      <input id="l-pass" type="password" value="adminpass">
+      <button onclick="dashLogin()">เข้าสู่ระบบ Dashboard</button>
+      <p id="l-err" style="color:#fca5a5; font-size:13px; margin-top:15px; text-align:center;"></p>
+    </div>
+  </div>
+  <div class="header">
+    <h1 style="font-size:1.4rem; font-weight:bold;">📊 Log Dashboard <span style="font-size:12px; font-weight:normal; color:var(--muted); border:1px solid var(--border); padding:2px 8px; border-radius:20px;">Admin Only</span></h1>
+    <a href="index.html" style="color:white; background:var(--border); padding:8px 15px; border-radius:8px; text-decoration:none; font-size:14px; font-weight:bold;">← กลับ Task Board</a>
+  </div>
+  <div class="container">
+    <div class="stats">
+      <div class="stat-card"><div class="stat-label">Total Requests</div><div class="stat-value" id="stat-total">0</div></div>
+      <div class="stat-card"><div class="stat-label" style="color:var(--green)">INFO Events</div><div class="stat-value" style="color:var(--green)" id="stat-info">0</div></div>
+      <div class="stat-card"><div class="stat-label" style="color:var(--yellow)">WARN Events</div><div class="stat-value" style="color:var(--yellow)" id="stat-warn">0</div></div>
+      <div class="stat-card"><div class="stat-label" style="color:var(--red)">ERROR Events</div><div class="stat-value" style="color:var(--red)" id="stat-error">0</div></div>
+    </div>
+    <div class="log-table">
+      <div class="log-table-header"><div>Timestamp</div><div>Service</div><div>Severity</div><div>Event Type</div><div>Details</div></div>
+      <div id="log-rows"><div style="padding:3rem; text-align:center; color:var(--muted);">กำลังดึงข้อมูล...</div></div>
+    </div>
+  </div>
+  <script src="config.js"></script>
+  <script>
+    let token = localStorage.getItem('token');
+    async function dashLogin() {
+      try {
+        const res = await fetch(`${window.APP_CONFIG.AUTH_URL}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: document.getElementById('l-email').value, password: document.getElementById('l-pass').value }) });
+        const data = await res.json();
+        if (res.ok) {
+          if (data.user.role !== 'admin') { document.getElementById('l-err').textContent = '🚫 สิทธิ์ไม่เพียงพอ!'; return; }
+          token = data.token; localStorage.setItem('token', token);
+          document.getElementById('login-overlay').style.display = 'none'; loadLogs(); setInterval(loadLogs, 3000);
+        } else { document.getElementById('l-err').textContent = '❌ อีเมลหรือรหัสผ่านผิด'; }
+      } catch(e) { document.getElementById('l-err').textContent = '⚠️ ไม่สามารถเชื่อมต่อ Server ได้'; }
+    }
+    async function loadLogs() {
+      try {
+        const res = await fetch(`${window.APP_CONFIG.AUTH_URL}/api/auth/logs`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (res.status === 401 || res.status === 403) { document.getElementById('login-overlay').style.display = 'flex'; return; }
+        const data = await res.json(); let info=0, warn=0, err=0;
+        document.getElementById('log-rows').innerHTML = (data.logs||[]).map(l => {
+          if(l.level === 'INFO') info++; if(l.level === 'WARN') warn++; if(l.level === 'ERROR') err++;
+          return `<div class="log-row"><div style="color:var(--muted); font-family:monospace;">${new Date(l.created_at).toLocaleString('th-TH')}</div><div style="color:var(--blue); font-weight:bold; font-size:12px;">Auth Service</div><div><span class="badge badge-${l.level}">${l.level}</span></div><div style="font-family:monospace; color:var(--purple);">${l.event}</div><div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${l.message||'-'}</div></div>`;
+        }).join('');
+        document.getElementById('stat-total').innerText = data.total || 0; document.getElementById('stat-info').innerText = info; document.getElementById('stat-warn').innerText = warn; document.getElementById('stat-error').innerText = err;
+      } catch(e) {}
+    }
+    if (token) {
+      fetch(`${window.APP_CONFIG.AUTH_URL}/api/auth/verify`, { headers: { Authorization: `Bearer ${token}` } }).then(r=>r.json()).then(d=>{
+        if(d.valid && d.user.role === 'admin') { document.getElementById('login-overlay').style.display = 'none'; loadLogs(); setInterval(loadLogs, 3000); } else { localStorage.removeItem('token'); token=null; }
+      });
+    }
+  </script>
+</body>
+</html>
