@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Users Directory | Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 p-10">
+  <div class="max-w-4xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-slate-800"><i class="fa-solid fa-users text-emerald-500 mr-2"></i> Users Directory</h1>
+      <button onclick="window.location.href='index.html'" class="bg-white border px-4 py-2 rounded-lg text-slate-600 font-bold hover:bg-slate-50"><i class="fa-solid fa-arrow-left mr-2"></i> Back</button>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+      <table class="w-full text-left border-collapse">
+        <thead class="bg-slate-50 border-b">
+          <tr>
+            <th class="p-4 text-slate-400 font-bold text-sm">UID</th>
+            <th class="p-4 text-slate-400 font-bold text-sm">AVATAR</th>
+            <th class="p-4 text-slate-400 font-bold text-sm">USERNAME / EMAIL</th>
+            <th class="p-4 text-slate-400 font-bold text-sm">ROLE</th>
+          </tr>
+        </thead>
+        <tbody id="usersBody" class="divide-y text-slate-600">
+           <tr><td colspan="4" class="p-8 text-center">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    const USER = window.APP_CONFIG.USER_URL;
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
+    if(!token) window.location.href = 'index.html';
+
+    async function loadUsers() {
+      try {
+        const res = await fetch(`${USER}/api/users`, { headers: { 'Authorization': `Bearer ${token}` }});
+        if(!res.ok) { document.getElementById('usersBody').innerHTML = '<tr><td colspan="4" class="p-8 text-center text-rose-500 font-bold">❌ Access Denied: Admin Only</td></tr>'; return; }
+        
+        const data = await res.json();
+        document.getElementById('usersBody').innerHTML = data.users.map(u => {
+            const avatar = u.avatar_url || `https://ui-avatars.com/api/?name=${u.username}&background=random`;
+            const roleColor = u.role === 'admin' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600';
+            return `
+              <tr class="hover:bg-slate-50">
+                <td class="p-4 font-mono text-sm text-slate-400">#${u.user_id}</td>
+                <td class="p-4"><img src="${avatar}" class="w-10 h-10 rounded-full object-cover"></td>
+                <td class="p-4 font-bold">${u.display_name || u.username} <div class="text-xs font-normal text-slate-400">${u.email}</div></td>
+                <td class="p-4"><span class="text-[10px] font-bold uppercase px-2 py-1 rounded-md ${roleColor}">${u.role}</span></td>
+              </tr>
+            `;
+        }).join('');
+      } catch(e) { document.getElementById('usersBody').innerHTML = '<tr><td colspan="4" class="p-8 text-center text-rose-500">Network Error</td></tr>'; }
+    }
+    loadUsers();
+  </script>
+</body>
+</html>
