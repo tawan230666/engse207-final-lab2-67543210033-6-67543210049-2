@@ -1,4 +1,5 @@
 const express = require('express'); const { pool } = require('../db/db'); const requireAuth = require('../middleware/authMiddleware'); const router = express.Router();
+router.get('/health', (_, res) => res.json({status:'ok'}));
 router.use(requireAuth);
 router.get('/me', async (req, res) => {
   let p = await pool.query('SELECT * FROM user_profiles WHERE user_id=$1', [req.user.sub]);
@@ -17,5 +18,4 @@ router.get('/', async (req, res) => {
   if(req.user.role !== 'admin') return res.status(403).send('Forbidden');
   const r = await pool.query('SELECT * FROM user_profiles ORDER BY user_id'); res.json({users:r.rows});
 });
-router.get('/health', (_, res) => res.json({status:'ok'}));
 module.exports = router;
