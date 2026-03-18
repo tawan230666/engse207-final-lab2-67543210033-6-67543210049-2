@@ -2,7 +2,13 @@ const express = require('express'); const { pool } = require('../db/db');
 const requireAuth = require('../middleware/authMiddleware'); 
 const router = express.Router();
 
-router.get('/health', (_, res) => res.json({ status: 'ok' }));
+router.get('/health', (_, res) => res.json({ 
+    status: 'ok', 
+    service: 'user-service',
+    time: new Date().toISOString(),      // บอกเวลาปัจจุบันของ Server
+    uptime: process.uptime()             // บอกว่า Service นี้รันมานานกี่วินาทีแล้ว (แถมให้ครับ มีประโยชน์มากเวลาเช็ค Server รีสตาร์ทเอง)
+}));
+
 router.use(requireAuth);
 
 router.get('/me', async (req, res) => {

@@ -8,6 +8,12 @@ const DUMMY_HASH = '$2b$10$CwTycUXWue0Thq9StjUM0uJ8y0R6VQwWi4KFOeFHrgb3R04QLbL7a
 async function logEvent({ level, event, userId, ip, message, meta }) {
   try { await pool.query('INSERT INTO logs (level, event, user_id, ip_address, message, meta) VALUES ($1,$2,$3,$4,$5,$6)', [level, event, userId || null, ip || null, message || null, meta ? JSON.stringify(meta) : null]); } catch (e) {}
 }
+router.get('/health', (_, res) => res.json({ 
+    status: 'ok', 
+    service: 'auth-service',
+    time: new Date().toISOString(),      // บอกเวลาปัจจุบันของ Server
+    uptime: process.uptime()             // บอกว่า Service นี้รันมานานกี่วินาทีแล้ว (แถมให้ครับ มีประโยชน์มากเวลาเช็ค Server รีสตาร์ทเอง)
+}));
 
 router.post('/register', async (req, res) => {
   const { username, email, password } = req.body;
@@ -67,5 +73,4 @@ router.get('/logs', async (req, res) => {
   } catch (e) { res.status(401).json({ error: 'Unauthorized' }); }
 });
 
-router.get('/health', (_, res) => res.json({ status: 'ok', service: 'auth-service' }));
 module.exports = router;

@@ -7,7 +7,13 @@ async function logEvent({ level, event, userId, message, meta }) {
   try { await pool.query('INSERT INTO logs (level, event, user_id, message, meta) VALUES ($1,$2,$3,$4,$5)', [level, event, userId || null, message || null, meta ? JSON.stringify(meta) : null]); } catch (e) {}
 }
 
-router.get('/health', (_, res) => res.json({ status: 'ok', service: 'task-service' }));
+router.get('/health', (_, res) => res.json({ 
+    status: 'ok', 
+    service: 'task-service',
+    time: new Date().toISOString(),      // บอกเวลาปัจจุบันของ Server
+    uptime: process.uptime()             // บอกว่า Service นี้รันมานานกี่วินาทีแล้ว (แถมให้ครับ มีประโยชน์มากเวลาเช็ค Server รีสตาร์ทเอง)
+}));
+
 router.use(requireAuth);
 
 router.get('/', async (req, res) => {
