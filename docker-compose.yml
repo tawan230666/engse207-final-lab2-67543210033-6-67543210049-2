@@ -1,31 +1,61 @@
+# Local development stack. Values come from .env (see .env.example);
+# the defaults below let `docker compose up` work without one.
+
+x-db: &db
+  image: postgres:15-alpine
+  environment:
+    POSTGRES_DB: ${POSTGRES_DB:-taskboard}
+    POSTGRES_USER: ${POSTGRES_USER:-admin}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret123}
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin}"]
+    interval: 5s
+    retries: 10
+
+x-jwt: &jwt-env
+  JWT_SECRET: ${JWT_SECRET:-engse207-local-dev-secret}
+
 services:
   auth-db:
-    image: postgres:15-alpine
-    environment: { POSTGRES_DB: taskboard, POSTGRES_USER: admin, POSTGRES_PASSWORD: secret123 }
+    <<: *db
     ports: ["5433:5432"]
   task-db:
-    image: postgres:15-alpine
-    environment: { POSTGRES_DB: taskboard, POSTGRES_USER: admin, POSTGRES_PASSWORD: secret123 }
+    <<: *db
     ports: ["5434:5432"]
   user-db:
-    image: postgres:15-alpine
-    environment: { POSTGRES_DB: taskboard, POSTGRES_USER: admin, POSTGRES_PASSWORD: secret123 }
+    <<: *db
     ports: ["5435:5432"]
+
   auth-service:
     build: ./auth-service
-    environment: { DATABASE_URL: "postgres://admin:secret123@auth-db:5432/taskboard", JWT_SECRET: engse207-shared-jwt-secret-set2, PORT: 3001 }
+    environment:
+      <<: *jwt-env
+      DATABASE_URL: postgres://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-secret123}@auth-db:5432/${POSTGRES_DB:-taskboard}
+      PORT: 3001
     ports: ["3001:3001"]
-    depends_on: [auth-db]
+    depends_on:
+      auth-db: { condition: service_healthy }
+
   task-service:
     build: ./task-service
-    environment: { DATABASE_URL: "postgres://admin:secret123@task-db:5432/taskboard", JWT_SECRET: engse207-shared-jwt-secret-set2, PORT: 3002 }
+    environment:
+      <<: *jwt-env
+      DATABASE_URL: postgres://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-secret123}@task-db:5432/${POSTGRES_DB:-taskboard}
+      PORT: 3002
     ports: ["3002:3002"]
-    depends_on: [task-db]
+    depends_on:
+      task-db: { condition: service_healthy }
+
   user-service:
     build: ./user-service
-    environment: { DATABASE_URL: "postgres://admin:secret123@user-db:5432/taskboard", JWT_SECRET: engse207-shared-jwt-secret-set2, PORT: 3003 }
+    environment:
+      <<: *jwt-env
+      DATABASE_URL: postgres://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-secret123}@user-db:5432/${POSTGRES_DB:-taskboard}
+      PORT: 3003
     ports: ["3003:3003"]
-    depends_on: [user-db]
+    depends_on:
+      user-db: { condition: service_healthy }
+
   frontend:
     build: ./frontend
     ports: ["8080:80"]
